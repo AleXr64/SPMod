@@ -36,6 +36,7 @@ enum PluginReturn
 }
 
 #include <clients>
+#include <access>
 #include <cvars>
 #include <natives>
 #include <forwards>
@@ -43,6 +44,7 @@ enum PluginReturn
 #include <messages>
 #include <commands>
 #include <timers>
+#include <menus>
 #include <float>
 
 /*
@@ -155,3 +157,20 @@ native void ChangeLevel(const char[] map);
  * @return      Game time, in seconds
  */
 native float GetGameTime();
+
+/*
+ * @brief Queues a command to be executed from the server console. 
+ * 
+ * @param command   Command to be executed
+ * @param ...       Format parameters.
+ * 
+ * @noreturn
+ */
+native void ServerCmd(const char[] command, any ...);
+
+/*
+ * @brief Forces the server to execute the command queue immediately. 
+ * 
+ * @noreturn
+ */
+native void ServerExec();

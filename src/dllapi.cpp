@@ -64,22 +64,30 @@ static void ClientCommand(edict_t *pEntity)
     }
 
     META_RES res = MRES_IGNORED;
+
+    std::string strCmd(CMD_ARGV(0));
+
     const std::unique_ptr<CommandMngr> &cmdMngr = gSPGlobal->getCommandManagerCore();
     if (cmdMngr->getCommandsNum(CmdType::Client))
     {
-        std::string strCmd(CMD_ARGV(0));
-
         if (!strCmd.compare("say") || !strCmd.compare("say_team"))
         {
             strCmd += ' ';
             strCmd += CMD_ARGV(1);
         }
 
+        std::shared_ptr<Player> player = gSPGlobal->getPlayerManagerCore()->getPlayerCore(pEntity);
+
         for (const auto &cmd : cmdMngr->getCommandList(CmdType::Client))
         {
             std::regex cmdToMatch(cmd->getCmd().data());
-            if (std::regex_search(strCmd, cmdToMatch) && cmd->hasAccess())
+            if (std::regex_search(strCmd, cmdToMatch))
             {
+                const char *perm = cmd->getPermission();
+
+                if(perm[0] && !player->hasAccessCore(perm))
+                    continue;
+
                 cell_t result;
                 SourcePawn::IPluginFunction *func = cmd->getFunc();
                 func->PushCell(ENTINDEX(pEntity));
@@ -94,6 +102,11 @@ static void ClientCommand(edict_t *pEntity)
                 }
             }
         }
+    }
+
+    if (!strCmd.compare("menuselect"))
+    {
+        res = gSPGlobal->getMenuManagerCore()->ClientCommand(pEntity);
     }
 
     RETURN_META(res);
@@ -180,6 +193,8 @@ static void ServerDeactivatePost()
     gSPGlobal->getTimerManagerCore()->clearTimers();
     gSPGlobal->getCommandManagerCore()->clearCommands();
     gSPGlobal->getCvarManagerCore()->clearCvarsCallback();
+    gSPGlobal->getGroupManagerCore()->clear();
+    gSPGlobal->getMenuManagerCore()->clearMenus();
     fwdMngr->clearForwards();
     gSPGlobal->getLoggerCore()->resetErrorState();
     gSPGlobal->getNativeManagerCore()->freeFakeNatives();
